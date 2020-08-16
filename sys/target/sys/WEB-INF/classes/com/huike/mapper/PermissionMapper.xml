@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.huike.mapper.PermissionMapper">
+
+    <sql id="Base_List">
+	id,permission,description,isDeleted
+    </sql>
+
+    <insert id="insert" parameterType="Permission">
+		insert into sys_permissions
+        	(id,permission,description,isDeleted)
+        values
+        	(#{id},#{permission},#{description},#{isDeleted})
+    </insert>
+
+    <insert id="addPermission" parameterType="Permission">
+		insert into sys_permissions
+        	(permission,description,isDeleted)
+        values
+        	(#{permission},#{description},#{isDeleted})
+    </insert>
+
+    <!-- 修改信息 -->
+    <update id="update" parameterType="Permission">
+        update sys_permissions
+        set permission=#{permission},
+            description=#{description}
+        where id=#{id}
+    </update>
+    <!-- 修改信息 -->
+    <update id="updatePermission" parameterType="Permission">
+        update sys_permissions
+        set permission=#{permission},
+            description=#{description}
+        where id=#{id}
+    </update>
+
+    <!-- 实现一个伪删除，使用更新，将isDeleted变为true即可 -->
+    <delete id="delete" parameterType="long">
+    	update sys_permissions
+    		set isDeleted=true
+    		where id=#{id}
+    </delete>
+
+    <!-- 实现一个伪删除，使用更新，将isDeleted变为true即可 -->
+    <delete id="deletePermission" parameterType="long">
+    	update sys_permissions
+    		set isDeleted=true
+    		where id=#{id}
+    </delete>
+
+    <!-- 查询所有用户信息有条件 -->
+    <select id="select" parameterType="Permission" resultType="Permission">
+        select
+        <include refid="Base_List"/>
+        from sys_permissions
+        where isDeleted=false
+        <if test="id!=null">and id=#{id}</if>
+        <if test="permission!=null">and permission=#{permission}</if>
+        <if test="description!=null">and description=#{description}</if>
+    </select>
+
+    <!--    删除角色权限关联-->
+    <delete id="delRolePermissions" parameterType="RolePermission">
+        delete from sys_role_permissions
+        <where>
+            <if test="permissionId != null">and permissionId=#{permissionId}</if>
+            <if test="roleId != null">and roleId=#{roleId}</if>
+        </where>
+    </delete>
+    <!--    实现添加角色权限表-->
+    <insert id="addRolePermissions" parameterType="RolePermission">
+       insert into  sys_role_permissions
+       (roleId,permissionId)
+       values (#{roleId},#{permissionId})
+   </insert>
+<!--通过roleId得到所拥有的权限-->
+    <select id="getPermissionIds" parameterType="RolePermission" resultType="RolePermission">
+        select roleId, permissionId
+        from sys_role_permissions
+        <where>
+            <if test="roleId != null" >and roleId = #{roleId}</if>
+            <if test="permissionId != null" >and permissionId = #{permissionId}</if>
+        </where>
+    </select>
+
+<!--&lt;!&ndash;    得到整个权限的信息&ndash;&gt;-->
+<!--    <select id="getPermissionById"  resultType="Permission">-->
+<!--        select-->
+<!--        <include refid="Base_List"></include>-->
+<!--        from sys_permissions-->
+<!--        <where>-->
+<!--            <if test="id != null" >and id = #{permissionId}</if>-->
+<!--        </where>-->
+<!--    </select>-->
+
+
+    <!--    查询所有的表记录数-->
+    <select id="selectCount" resultType="Long">
+       select
+       count(id)
+       from sys_permissions
+       where isDeleted = false
+   </select>
+
+    <!--    分页查询-->
+    <select id="selectByPage" parameterType="map" resultType="Permission">
+        select
+        <include refid="Base_List"></include>
+        from sys_permissions
+        where isDeleted = false
+        limit #{currPage},#{pageSize}
+    </select>
+</mapper>
+
+

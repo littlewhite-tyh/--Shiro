@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/mvc
+                        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+                        http://www.springframework.org/schema/context
+                        http://www.springframework.org/schema/context/spring-context.xsd
+                        http://www.springframework.org/schema/aop
+                        http://www.springframework.org/schema/aop/spring-aop.xsd
+                        http://www.springframework.org/schema/tx
+                        http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <!--shiro 核心安全接口  -->
+        <property name="securityManager" ref="securityManager"/>
+        <!--验证没有登录后跳转的地址 -->
+<!--        <property name="loginUrl" value="/user/login"/>-->
+        <property name="loginUrl" value="/login"/>
+        <!--未授权时跳转的地址  -->
+        <property name="unauthorizedUrl" value="/error.jsp"/>
+        <!--认证成功后跳转地址-->
+<!--        <property name="successUrl" value="success"/>-->
+        <!-- 读取初始自定义权限内容-->
+        <!-- 如果使用authc验证,需重写实现rememberMe的过滤器,或配置formAuthenticationFilter的Bean -->
+        <property name="filterChainDefinitions">
+            <value>
+                /css/**=anon
+                /images/**=anon
+                /js/**=anon
+                /lib/**=anon
+                /model/**=anon
+                /skin/**=anon
+                /index.jsp=anon
+                /submitLogin.do=anon
+                /user/perms/error=anon
+                /user/login=anon
+                /**=user
+            </value>
+        </property>
+    </bean>
+
+    <!-- 安全管理器 -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm" ref="userRealm"/>
+        <property name="rememberMeManager" ref="rememberMeManager"/>
+    </bean>
+
+    <bean id="userRealm" class="com.huike.realm.UserRealm">
+        <property name="cachingEnabled" value="true"/>
+<!--        注入密码验证器-->
+        <property name="credentialsMatcher" >
+        <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+            <!--     hashAlgorithmName  md5 散列函数           -->
+            <property name="hashAlgorithmName" value="MD5"/>
+            <!--        hashIterations 散列的次数-->
+            <property name="hashIterations" value="2"/>
+        </bean>
+        </property>
+    </bean>
+
+    <!-- 会话 Cookie 模板 -->
+    <bean id="sessionIdCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <constructor-arg value="sid"/>
+        <property name="httpOnly" value="true"/>
+        <property name="maxAge" value="-1"/>
+    </bean>
+    <!--  -->
+    <bean id="rememberMeCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <constructor-arg value="rememberMe"/>
+        <!-- cookie只在http请求中可用，那么通过js脚本将无法读取到cookie信息，有效防止cookie被窃取 -->
+        <property name="httpOnly" value="true"/>
+        <!-- cookie的生命周期，单位：秒 -->
+        <property name="maxAge" value="2592000"/><!-- 30 天 -->
+    </bean>
+
+    <!-- rememberMe 管理器 -->
+    <bean id="rememberMeManager" class="org.apache.shiro.web.mgt.CookieRememberMeManager">
+        <property name="cipherKey" value="
+        #{T(org.apache.shiro.codec.Base64).decode('4AvVhmFLUs0KTA3Kprsdag==')}"/>
+        <property name="cookie" ref="rememberMeCookie"/>
+    </bean>
+
+    <!-- 4、注册安全管理对象   -->
+    <!-- 相当于调用SecurityUtils.setSecurityManager(securityManager) -->
+    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="org.apache.shiro.SecurityUtils.setSecurityManager"/>
+        <property name="arguments" ref="securityManager"/>
+    </bean>
+<!--    注入shiro的生命周期管理器-->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+</beans>

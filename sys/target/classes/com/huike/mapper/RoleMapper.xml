@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.huike.mapper.RoleMapper">
+
+    <sql id="Base_List">
+	id,name,description,isDeleted
+    </sql>
+
+    <insert id="insert" parameterType="Role" useGeneratedKeys="true" keyProperty="id">
+		insert into sys_roles
+        	(name,description,isDeleted)
+        values
+        	(#{name},#{description},#{isDeleted})
+    </insert>
+
+    <!-- 修改用户信息 -->
+    <update id="update" parameterType="Role">
+        update sys_roles
+        set name=#{name},
+            description=#{description}
+        where id=#{id}
+    </update>
+
+    <!-- 修改用户信息不返回role -->
+    <update id="updateRole" parameterType="Role">
+        update sys_roles
+        set name=#{name},
+            description=#{description}
+        where id=#{id}
+    </update>
+
+    <!-- 实现一个伪删除，使用更新，将isDeleted变为true即可 -->
+    <delete id="delete" parameterType="long">
+    	update sys_roles
+    		set isDeleted=true
+    		where id=#{id}
+    </delete>
+    <!-- 实现一个伪删除，使用更新，将isDeleted变为true即可 -->
+    <delete id="deleteRole" parameterType="Role">
+    	update sys_roles
+    		set isDeleted=true
+    		where id=#{id}
+    </delete>
+
+    <!-- 查询所有用户信息有条件 -->
+    <select id="select" parameterType="Role" resultType="Role">
+        select
+        <include refid="Base_List"/>
+        from sys_roles
+        where isDeleted=false
+        <if test="id!=null">and id=#{id}</if>
+        <if test="name!=null">and name=#{name}</if>
+        <if test="description!=null">and description=#{description}</if>
+    </select>
+
+    <select id="QueryAllRoles" resultType="Role">
+        select
+        <include refid="Base_List"/>
+        from sys_roles
+        where isDeleted=false
+    </select>
+
+    <!--    查询所有的role表记录数-->
+    <select id="selectCount" resultType="Long">
+       select
+       count(id)
+       from sys_roles
+       where isDeleted = false
+   </select>
+
+    <!--    分页查询-->
+    <select id="selectByPage" parameterType="map" resultType="Role">
+        select
+        <include refid="Base_List"></include>
+        from sys_roles
+        where isDeleted = false
+        limit #{currPage},#{pageSize}
+    </select>
+</mapper>
+
+

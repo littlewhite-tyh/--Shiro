@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.huike.mapper.AdminUserMapper">
+
+    <sql id="Base_List">
+	id,account,password,passwordSalt,isDisabled,isDeleted
+    </sql>
+
+    <insert id="insert" parameterType="AdminUser" useGeneratedKeys="true" keyProperty="id">
+		insert into sys_users
+        	(account,password,passwordSalt,isDisabled,isDeleted)
+        values
+        	(#{account},#{password},#{passwordSalt},#{isDisabled},#{isDeleted})
+    </insert>
+
+    <!-- 修改用户密码 -->
+    <update id="update" parameterType="AdminUser">
+        update sys_users
+        set password=#{password}
+        <where>
+            <if test="id != null">and id = #{id}</if>
+            <if test="account != null">and account = #{account}</if>
+        </where>
+    </update>
+
+    <!-- 实现一个伪删除，使用更新，将isDeleted变为true即可 -->
+    <delete id="delete" parameterType="long">
+    	update sys_users
+    		set isDeleted=true
+    		where id=#{id}
+</delete>
+
+    <!-- 查询所有用户信息 -->
+    <select id="select" parameterType="AdminUser" resultType="AdminUser">
+        select
+        <include refid="Base_List"/>
+        from sys_users
+        where isDeleted=false
+        <if test="id!=null">and id=#{id}</if>
+        <if test="account!=null">and account=#{account}</if>
+        <if test="password!=null">and password=#{password}</if>
+    </select>
+
+    <!-- 分页查询 -->
+    <select id="selectByPage" parameterType="map" resultType="AdminUser" >
+        select
+        <include refid="Base_List"/>
+        from sys_users
+        where isDeleted=false
+        limit #{currPage},#{pageSize}
+    </select>
+
+    <!-- 查询总数-->
+    <select id="selectCount" resultType="long">
+    	select
+    	count(id)
+    	from sys_users
+ 		   	where isDeleted=false
+    </select>
+
+<!--    实现添加用户角色信息表-->
+   <insert id="addAdminUserRole" parameterType="AdminUserRole">
+       insert into  sys_user_roles
+       (adminUserId,roleId)
+       values (#{adminUserId},#{roleId})
+   </insert>
+
+<!--    删除用户角色表关联-->
+    <delete id="delAdminUserRole" parameterType="AdminUserRole">
+        delete from sys_user_roles
+        <where>
+            <if test="adminUserId != null">and adminUserId=#{adminUserId}</if>
+            <if test="roleId != null">and roleId=#{roleId}</if>
+        </where>
+    </delete>
+
+<!--    查询用户当前所有的角色-->
+    <select id="selectAdminUserRole" parameterType="AdminUserRole" resultType="AdminUserRole">
+        select * from sys_user_roles
+        <where>
+            <if test="adminUserId != null"> and adminUserId=#{adminUserId}</if>
+            <if test="roleId != null">and roleId=#{roleId}</if>
+        </where>
+    </select>
+
+<!--    通过当前id得到AdminUser的isDisabled-->
+    <select id="getAdminUserDisabledById" parameterType="Long" resultType="Boolean">
+        select
+        isDisabled
+        from sys_users
+        where id = #{id}
+    </select>
+
+<!--    更改用户启用状态-->
+    <update id="updateAdminUserDisabled" parameterType="AdminUser">
+        update sys_users
+        set isDisabled = #{isDisabled}
+        where id = #{id}
+    </update>
+
+    <!--    通过当前id得到AdminUser-->
+    <select id="getAdminUserById" parameterType="Long" resultType="AdminUser">
+        select
+        <include refid="Base_List"></include>
+        from sys_users
+        where id = #{id}
+    </select>
+
+<!--    通过姓名得到当前AdminUser-->
+    <select id="selectAdminUserByName" parameterType="String" resultType="AdminUser">
+        select
+        <include refid="Base_List"></include>
+        from sys_users
+        where account = #{account}
+    </select>
+
+<!--    通过用户的AdminUserId查询所拥有的所有角色-->
+    <select id="findRolesById" parameterType="Long" resultType="String">
+        select DISTINCT r.name
+        from sys_roles r
+        inner join sys_user_roles ur on r.id = ur.roleId
+        where ur.adminUserId = #{adminUserId}
+    </select>
+    <!--    根据AdminuserID查询所有权限-->
+    <select id="findPermissionsById" parameterType="Long" resultType="String">
+        SELECT DISTINCT  (p.permission)  FROM
+            sys_permissions  p
+            INNER JOIN sys_role_permissions rp ON rp.permissionId = p.id
+            INNER JOIN sys_roles  r ON r.id = rp.roleId
+            INNER JOIN sys_user_roles ur  ON ur.roleId = r.id
+            WHERE ur.adminUserId = #{adminUserId}
+    </select>
+
+<!--    /**-->
+<!--    * 查询是否能改密码-->
+<!--    */-->
+<!--    <select id="doAuthentication" parameterType="AdminUser" resultType="AdminUser">-->
+<!--        select * from sys_users-->
+<!--        <where>-->
+<!--            <if test="adminUserId != null"> and adminUserId=#{adminUserId}</if>-->
+<!--            <if test="password != null">and password=#{password}</if>-->
+<!--        </where>-->
+<!--    </select>-->
+
+</mapper>
+
